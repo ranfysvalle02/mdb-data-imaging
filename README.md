@@ -1,4 +1,4 @@
-# **The Workout Radiologist: Imaging Effort with MongoDB Atlas Vector Search**  
+# **The Workout Radiologist**  
 
 ![](smartwatch-visuals.png)
 
