@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+numpy
+Pillow
+matplotlib
+pymongo
+python-dotenv
+motor
+httpx
+ray[default]
