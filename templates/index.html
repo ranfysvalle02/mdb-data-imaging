@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Collection Gallery</title>
+  <style>
+  :root {
+    --atlas-green: #00ED64;         /* MongoDB Green */
+    --atlas-green-darker: #00A343;  /* Darker Green for hover/accents */
+    --atlas-dark-blue: #132A38;     /* Main container background */
+    --atlas-bg: #0C1822;            /* Deep background */
+    --atlas-light-text: #E4EAF0;    /* Primary text color - Lighter */
+    --atlas-mid-text: #A7B6C2;      /* Secondary text color - Lighter */
+    --atlas-border: #2A506F;        /* Border color - More contrast */
+    --atlas-hover-bg: #1C3A50;      /* Background for hover states */
+    --atlas-delete-red: #FF6868;    /* Lighter red for delete */
+    --atlas-delete-border: #B34949; /* Darker red border */
+    --button-text-dark: #0C1822;    /* Text color for green button */
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--atlas-bg);
+    color: var(--atlas-light-text);
+    line-height: 1.6;
+  }
+  
+  #particle-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 30px auto; /* Increased margin */
+    padding: 25px 30px; /* Increased padding */
+    background-color: var(--atlas-dark-blue);
+    border-radius: 12px;
+    border: 1px solid var(--atlas-border);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 237, 100, 0.15); /* Enhanced shadow */
+    position: relative;
+    z-index: 1;
+  }
+  
+  h1 {
+    color: var(--atlas-light-text);
+    text-align: center;
+    font-size: 2.2em; /* Larger title */
+    margin-bottom: 5px;
+  }
+  
+  h2 {
+    color: var(--atlas-mid-text);
+    text-align: center;
+    font-weight: 400;
+    margin-top: 0;
+    margin-bottom: 25px; /* More space below subtitle */
+    font-size: 1.2em;
+  }
+  
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 20px; /* Increased gap */
+    margin-bottom: 30px; /* More space below controls */
+  }
+  
+  .control-btn {
+    padding: 12px 25px; /* Larger buttons */
+    font-size: 1.05em; /* Slightly larger text */
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease-in-out;
+    display: inline-flex; /* Align icon and text */
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .btn-generate {
+    background-color: var(--atlas-green);
+    color: var(--button-text-dark); /* Dark text for contrast */
+  }
+  .btn-generate:hover {
+    background-color: #fff;
+    color: #000;
+    box-shadow: 0 0 15px var(--atlas-green);
+    transform: translateY(-2px);
+  }
+  
+  .btn-clear {
+    background-color: transparent;
+    color: var(--atlas-delete-red);
+    border: 1px solid var(--atlas-delete-border);
+  }
+  .btn-clear:hover {
+    background-color: var(--atlas-delete-red);
+    color: #fff;
+    border-color: var(--atlas-delete-red);
+    box-shadow: 0 0 15px var(--atlas-delete-red);
+    transform: translateY(-2px);
+  }
+  
+  .collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); /* Slightly larger items */
+    gap: 25px; /* Increased gap */
+    margin-top: 30px;
+  }
+  
+  .collection-item {
+    text-align: center;
+    background-color: var(--atlas-hover-bg); /* Use hover bg for items */
+    border-radius: 8px;
+    font-size: 0.95em; /* Slightly larger text */
+    color: var(--atlas-mid-text);
+    transition: all 0.2s ease-in-out;
+    border: 1px solid var(--atlas-border);
+    overflow: hidden; /* Ensure image border radius works */
+  }
+  .collection-item:hover {
+    box-shadow: 0 6px 20px rgba(0, 237, 100, 0.25); /* Stronger hover shadow */
+    transform: translateY(-4px); /* More lift */
+    border-color: var(--atlas-green);
+  }
+  
+  .collection-item a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    padding: 15px; /* More padding */
+  }
+  
+  .collection-item img {
+    width: 100%; /* Make image responsive within grid item */
+    height: auto;
+    aspect-ratio: 1 / 1; /* Maintain square shape */
+    max-width: 128px; /* But limit max size */
+    image-rendering: pixelated;
+    margin-bottom: 10px; /* More space below image */
+    border: 1px solid var(--atlas-border);
+    border-radius: 4px;
+    background-color: #000;
+    display: block; /* Center image */
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .collection-item p {
+    margin: 0;
+    color: var(--atlas-light-text); /* Ensure item text is light */
+    font-weight: 500;
+  }
+  </style>
+</head>
+<body>
+
+<canvas id="particle-canvas"></canvas>
+
+<div class="container">
+  <h1>Workout Collection Gallery</h1>
+  <h2>The Workout Radiologist</h2>
+  <div class="controls">
+    <form action="/generate" method="POST" style="margin: 0;">
+      <button type="submit" class="control-btn btn-generate">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+        </svg>
+        Generate New Workout
+      </button>
+    </form>
+    <form action="/clear" method="POST" style="margin: 0;"
+          onsubmit="return confirm('Are you sure you want to delete ALL workouts?');">
+      <button type="submit" class="control-btn btn-clear">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z"/>
+        </svg>
+        Clear Entire Collection
+      </button>
+    </form>
+  </div>
+  <div class="collection-grid">
+    {{collection_images_html}}
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const canvas = document.getElementById("particle-canvas");
+  if (!canvas) {
+    console.error("Particle.js: Canvas element with id 'particle-canvas' not found.");
+    return;
+  }
+  
+  const ctx = canvas.getContext("2d");
+  let particles = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  function createParticle() {
+    const x = Math.random() * canvas.width;
+    const y = Math.random() * canvas.height;
+    const size = Math.random() * 2.5 + 1; // Slightly larger range
+    const speedX = (Math.random() * 0.5 - 0.25) * 0.6; // Even Slower
+    const speedY = (Math.random() * 0.5 - 0.25) * 0.6;
+    const opacity = Math.random() * 0.5 + 0.15; // Adjusted opacity for dark bg
+    particles.push({x, y, size, speedX, speedY, opacity});
+  }
+
+  const numParticles = window.innerWidth < 768 ? 60 : 100; // More particles
+  for (let i = 0; i < numParticles; i++) {
+    createParticle();
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    particles.forEach((p, index) => {
+      p.x += p.speedX;
+      p.y += p.speedY;
+
+      if (p.x < -p.size) p.x = canvas.width + p.size;
+      if (p.x > canvas.width + p.size) p.x = -p.size;
+      if (p.y < -p.size) p.y = canvas.height + p.size;
+      if (p.y > canvas.height + p.size) p.y = -p.size;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      // Use Atlas Green - more visible on dark bg
+      ctx.fillStyle = `rgba(0, 237, 100, ${p.opacity * 0.8})`; // Slightly reduced opacity factor
+      ctx.fill();
+    });
+
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+});
+</script>
+
+</body>
+</html>

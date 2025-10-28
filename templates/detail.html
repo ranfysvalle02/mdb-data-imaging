@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Detail: {{workout_id}}</title>
+  <style>
+  :root {
+    --atlas-green: #00ED64;         /* MongoDB Green */
+    --atlas-green-darker: #00A343;  /* Darker Green for hover/accents */
+    --atlas-dark-blue: #132A38;     /* Main container background */
+    --atlas-bg: #0C1822;            /* Deep background */
+    --atlas-light-text: #E4EAF0;    /* Primary text color - Lighter */
+    --atlas-mid-text: #A7B6C2;      /* Secondary text color - Lighter */
+    --atlas-border: #2A506F;        /* Border color - More contrast */
+    --atlas-hover-bg: #1C3A50;      /* Background for hover/items */
+    --atlas-delete-red: #FF6868;    /* Lighter red for delete */
+    --atlas-delete-border: #B34949; /* Darker red border */
+    --button-text-dark: #0C1822;    /* Text color for green button */
+    --accent-red: #FF6868;          /* Use lighter red */
+    --accent-blue: #58AEFF;         /* Use lighter blue */
+    --accent-green-viz: #34c759;    /* Specific green for viz */
+    --accent-orange: #FFA554;       /* Use lighter orange */
+    --accent-purple: #C792EA;       /* Lighter purple for pipeline */
+  }
+  
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--atlas-bg);
+    color: var(--atlas-light-text);
+    line-height: 1.6;
+  }
+  
+  #particle-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 25px 30px;
+    background-color: var(--atlas-dark-blue);
+    border-radius: 12px;
+    border: 1px solid var(--atlas-border);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 237, 100, 0.15);
+    position: relative;
+    z-index: 1;
+  }
+  
+  h1 {
+    color: var(--atlas-light-text);
+    border-bottom: 2px solid var(--atlas-border);
+    padding-bottom: 15px;
+    margin-top: 0;
+    font-size: 2.2em;
+  }
+  h2 {
+    color: var(--atlas-light-text);
+    border-bottom: 1px solid var(--atlas-border);
+    padding-bottom: 10px;
+    margin-top: 40px; 
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.6em;
+    font-weight: 600;
+  }
+  h3 {
+    color: var(--atlas-light-text);
+    text-align: left;
+    margin-bottom: 10px;
+    margin-top: 0;
+    font-size: 1.2em;
+    font-weight: 600;
+  }
+  h4 {
+    color: var(--atlas-mid-text);
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-weight: 500;
+  }
+  p, ul, li {
+    color: var(--atlas-mid-text);
+    font-size: 1.05em; 
+  }
+  ul { padding-left: 25px; }
+  li { margin-bottom: 10px; }
+  a {
+      color: var(--atlas-green);
+      text-decoration: none;
+      transition: color 0.2s ease;
+  }
+  a:hover {
+      color: #fff;
+      text-decoration: underline;
+  }
+
+  /* --- Navigation & Buttons --- */
+  .control-btn, .nav-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 10px 18px;
+    background-color: var(--atlas-green);
+    color: var(--button-text-dark);
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+  }
+  .nav-link:hover, .control-btn:hover {
+    background-color: #fff;
+    color: #000;
+    box-shadow: 0 0 15px var(--atlas-green);
+    transform: translateY(-2px);
+  }
+  .nav-link { /* Specific style for back button */
+    background-color: var(--atlas-hover-bg);
+    color: var(--atlas-light-text);
+    border: 1px solid var(--atlas-border);
+  }
+  .nav-link:hover {
+    border-color: var(--atlas-green);
+    color: var(--atlas-green);
+    background-color: var(--atlas-hover-bg);
+    box-shadow: 0 0 10px rgba(0, 237, 100, 0.3);
+  }
+  
+  /* --- Main Content Grid --- */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 30px; 
+    align-items: flex-start;
+    margin-bottom: 30px; 
+  }
+  
+  @media (max-width: 900px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+    .image-box { order: 1; position: relative; top: 0; } 
+    .json-box { order: 2; }
+  }
+
+  .image-box {
+    text-align: center;
+    position: sticky;
+    top: 25px;
+  }
+  .json-box {
+    min-width: 0; 
+  }
+  
+  img.main-img {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    image-rendering: pixelated;
+    border: 2px solid var(--atlas-border);
+    border-radius: 8px;
+    background-color: #000;
+  }
+  
+  img.channel-img {
+    width: 128px;
+    height: 128px;
+    image-rendering: pixelated;
+    display: block;
+    margin: 10px auto;
+    background-color: #000;
+    border: 1px solid var(--atlas-border);
+    border-radius: 4px;
+  }
+  
+  img.chart-img {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--atlas-border);
+    border-radius: 4px;
+    margin-top: 10px;
+    background-color: var(--atlas-dark-blue); 
+  }
+  
+  pre {
+    background-color: var(--atlas-bg);
+    color: #CDD8E3; 
+    border: 1px solid var(--atlas-border);
+    padding: 15px;
+    border-radius: 8px;
+    max-height: 450px; 
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 0.95em; 
+    line-height: 1.5;
+  }
+  
+  .caption {
+    font-style: italic;
+    color: var(--atlas-mid-text);
+    font-size: 0.95em;
+  }
+  .caption b {
+    font-style: normal;
+    color: var(--atlas-light-text);
+  }
+  
+  code {
+    background-color: var(--atlas-bg);
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    color: var(--atlas-green);
+    border: 1px solid var(--atlas-border);
+    font-size: 0.9em; 
+  }
+  pre code {
+    background-color: transparent;
+    color: inherit;
+    padding: 0;
+    border: none;
+    font-size: 1em; 
+  }
+
+  /* --- Box Styles --- */
+  .guide-box, .ai-summary-box, .explanation-box {
+    background-color: var(--atlas-hover-bg); 
+    border: 1px solid var(--atlas-border);
+    border-radius: 8px;
+    padding: 20px 30px; 
+    margin-top: 40px; 
+  }
+  
+  .ai-summary-box { border-top: 4px solid var(--accent-blue); }
+  .guide-box-knn { border-top: 4px solid var(--atlas-green); }
+  .guide-box-radiologist { border-top: 4px solid var(--accent-orange); }
+  .explanation-box { border-top: 4px solid var(--accent-purple); padding-bottom: 30px; }
+  .polymorphic-box { border-top: 4px solid var(--accent-red); }
+
+  /* --- AI Summary Box --- */
+  .ai-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  .ai-summary-text {
+    font-size: 1.15em; 
+    font-weight: 500;
+    color: var(--atlas-light-text);
+    border-left: 4px solid var(--accent-blue);
+    padding-left: 15px;
+    margin-top: 20px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    background-color: var(--atlas-dark-blue); 
+  }
+  .ai-summary-box .control-btn, .ai-summary-box .nav-link {
+     margin: 0;
+     padding: 8px 15px; 
+  }
+   .ai-summary-box #analyzeBtn { /* Style specifically for the generate button */
+      background-color: var(--accent-blue);
+      color: white;
+   }
+   .ai-summary-box #analyzeBtn:hover {
+       background-color: #58AEFF;
+       color: var(--button-text-dark);
+       box-shadow: 0 0 10px var(--accent-blue);
+   }
+   .ai-summary-box #analyzeBtn[disabled] { /* Style when analyzing */
+        background-color: var(--accent-orange);
+        color: var(--button-text-dark);
+        cursor: default;
+   }
+   .ai-summary-box #analyzeBtn[disabled]:hover {
+       box-shadow: none;
+       transform: none;
+   }
+  .ai-summary-box .btn-prompt {
+    background-color: var(--atlas-green-darker);
+    color: var(--atlas-light-text);
+  }
+  .ai-summary-box .btn-prompt:hover {
+    background-color: var(--atlas-green);
+    color: var(--button-text-dark);
+    box-shadow: 0 0 10px var(--atlas-green);
+  }
+  .ai-summary-box .button-group { display: flex; gap: 10px; }
+
+  /* --- Modal Styles (Improved Layout & Readability) --- */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(12, 24, 34, 0.8); 
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.3s ease;
+  }
+  .modal-content {
+    background-color: var(--atlas-dark-blue);
+    color: var(--atlas-light-text);
+    margin: 8% auto; 
+    padding: 30px 35px; 
+    border: 1px solid var(--atlas-green);
+    width: 90%;
+    max-width: 850px; 
+    border-radius: 12px;
+    box-shadow: 0 0 40px rgba(0, 237, 100, 0.4); 
+    animation: slideIn 0.3s ease-out;
+  }
+  .modal-content h2 {
+    margin-top: 0;
+    color: var(--atlas-green);
+    font-size: 1.8em;
+    margin-bottom: 25px; /* More space below title */
+  }
+  .modal-content p, .modal-content ul, .modal-content li {
+    font-size: 1.1em; 
+    color: var(--atlas-light-text);
+  }
+   .modal-content li {
+       margin-bottom: 15px; 
+   }
+  /* NEW: Style for "Why Cool" modal */
+  #whyModal .modal-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr; /* Two columns separated by a line */
+      gap: 30px;
+      margin-top: 20px;
+      align-items: start;
+  }
+  #whyModal .divider {
+      background-color: var(--atlas-border);
+      width: 1px;
+      height: 100%;
+  }
+  #whyModal .pain-point, #whyModal .cool-point {
+      margin: 0; /* Remove default margins */
+      padding: 0;
+      border: none;
+      background: none;
+  }
+  #whyModal h3 {
+      margin-bottom: 15px;
+      font-size: 1.3em;
+      border-bottom: 2px solid;
+      padding-bottom: 8px;
+      display: inline-block; /* Fit content width */
+  }
+  #whyModal .pain-point h3 {
+      color: var(--atlas-delete-red);
+      border-color: var(--atlas-delete-border);
+  }
+   #whyModal .cool-point h3 {
+      color: var(--atlas-green);
+      border-color: var(--atlas-green-darker);
+  }
+  #whyModal ul {
+      padding-left: 20px;
+      list-style-type: '❌ '; /* Custom bullet for pain */
+  }
+   #whyModal .cool-point ul {
+       list-style-type: '✅ '; /* Custom bullet for cool */
+   }
+   #whyModal li { margin-bottom: 12px; }
+   #whyModal strong { color: var(--atlas-light-text); font-weight: 600; }
+   #whyModal .bottom-line {
+       margin-top: 25px;
+       padding-top: 15px;
+       border-top: 1px solid var(--atlas-border);
+       text-align: center;
+       font-size: 1.15em;
+       color: var(--atlas-light-text);
+   }
+    #whyModal .bottom-line strong { color: var(--atlas-green); }
+
+
+  .close-btn {
+    color: var(--atlas-mid-text); 
+    float: right;
+    font-size: 35px; 
+    font-weight: bold;
+    line-height: 0.8;
+  }
+  .close-btn:hover, .close-btn:focus {
+    color: var(--atlas-light-text);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .prompt-code {
+    background-color: var(--atlas-bg);
+    color: #CDD8E3;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    font-family: monospace;
+    white-space: pre;
+    border: 1px solid var(--atlas-border);
+    font-size: 0.9em;
+  }
+  
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* --- REFINED: Encoding Pipeline Story --- */
+  .encoding-pipeline {
+    margin-top: 30px;
+    padding: 25px;
+    background: var(--atlas-bg);
+    border-radius: 8px;
+    border: 1px solid var(--atlas-border);
+  }
+  
+  .pipeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+  
+  .btn-why-cool {
+    background: transparent;
+    border: 1px solid var(--accent-orange);
+    color: var(--accent-orange);
+    padding: 8px 15px;
+    font-weight: 600;
+  }
+  .btn-why-cool:hover {
+    background: var(--accent-orange);
+    color: var(--button-text-dark);
+    box-shadow: 0 0 15px var(--accent-orange);
+    transform: translateY(-2px);
+  }
+  
+  .pipeline-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 25px; 
+  }
+  
+  .pipeline-step {
+    background: var(--atlas-dark-blue);
+    border: 1px solid var(--atlas-border);
+    padding: 25px; 
+    border-radius: 8px;
+  }
+  
+  .pipeline-step h3 {
+    margin-top: 0;
+    margin-bottom: 15px; 
+    color: var(--atlas-light-text);
+    display: flex;
+    align-items: center;
+    font-size: 1.3em;
+  }
+  .step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--atlas-green);
+    color: var(--button-text-dark);
+    font-size: 1em;
+    font-weight: 700;
+    margin-right: 15px;
+    flex-shrink: 0; 
+  }
+  
+  /* Step 1: Charts */
+  .step-1-charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+    gap: 25px;
+    width: 100%;
+  }
+  .step-1-charts div { text-align: center; }
+  .step-1-charts h4 { text-align: center; margin-bottom: 10px; font-size: 1.1em; }
+  .step-1-charts .red { color: var(--accent-red); }
+  .step-1-charts .green { color: var(--accent-green-viz); }
+  .step-1-charts .blue { color: var(--accent-blue); }
+  
+  /* Step 2: Fold Visualization */
+  .fold-visualization {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap; /* Allow wrap on smaller screens */
+      margin-top: 15px;
+      justify-content: center;
+      background: var(--atlas-bg); /* Add bg for contrast */
+      padding: 15px;
+      border-radius: 6px;
+  }
+  .fold-text-block {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 1.1em; 
+      color: var(--atlas-mid-text);
+      line-height: 1.4;
+      max-width: 400px; 
+      word-break: break-all; 
+  }
+  .fold-text-block .highlight {
+      color: var(--atlas-green);
+      background: #00ed641a; 
+      padding: 1px 3px;
+      border-radius: 3px;
+      font-weight: 600;
+  }
+   .fold-text-block .dim {
+       opacity: 0.6;
+   }
+  
+  .fold-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 1em; 
+    background: var(--atlas-bg);
+    padding: 10px; 
+    border-radius: 4px;
+    border: 1px solid var(--atlas-border);
+    min-width: 260px; 
+  }
+  .fold-grid span {
+    display: inline-flex; 
+    align-items: center;
+    justify-content: center;
+    width: 28px; 
+    height: 28px;
+    color: var(--atlas-mid-text);
+    background: #102331;
+    border-radius: 3px;
+    border: 1px solid #1c3a50; 
+  }
+  .fold-grid .highlight {
+    color: var(--atlas-green);
+    background: #00ed641a;
+    border: 1px solid var(--atlas-green);
+    font-weight: 600;
+  }
+  
+  /* Step 3: Stack (Sub-steps) */
+  .step-3-substeps {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 15px;
+  }
+  .substep {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: var(--atlas-bg); 
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid var(--atlas-border);
+  }
+  .substep img {
+      width: 80px; 
+      height: 80px;
+      margin: 0;
+      flex-shrink: 0; 
+  }
+  .substep p {
+      margin: 0;
+      flex-grow: 1;
+      color: var(--atlas-light-text); 
+  }
+  .substep strong {
+      color: var(--atlas-light-text);
+  }
+  .red-label { color: var(--accent-red); font-weight: 600; }
+  .green-label { color: var(--accent-green-viz); font-weight: 600; }
+  .blue-label { color: var(--accent-blue); font-weight: 600; }
+
+  .pipeline-arrow {
+    font-size: 2.5em;
+    color: var(--atlas-green);
+    font-weight: 300;
+    animation: pulse 2s infinite ease-in-out;
+    text-align: center;
+    margin: 15px 0; 
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.7; }
+  }
+  
+  /* Step 4: Flatten */
+  .step-4-content pre {
+      margin-top: 15px;
+      font-size: 0.9em;
+  }
+
+  /* Link styling within boxes */
+  .guide-box a, .ai-summary-box a, .explanation-box a, .polymorphic-box a {
+    font-weight: 500;
+    color: var(--atlas-green); /* Ensure links use green */
+  }
+   .guide-box a:hover, .ai-summary-box a:hover, .explanation-box a:hover, .polymorphic-box a:hover {
+       color: #fff;
+   }
+   /* Specific styling for neighbor links */
+   .guide-box-knn ul { list-style-type: none; padding-left: 0; }
+   .guide-box-knn li {
+       background: var(--atlas-dark-blue);
+       padding: 10px 15px;
+       border-radius: 6px;
+       border: 1px solid var(--atlas-border);
+       transition: background-color 0.2s ease;
+   }
+    .guide-box-knn li:hover {
+        background-color: #1a3a53;
+    }
+   .guide-box-knn li a { font-weight: 600; }
+   /* Span for score */
+   .guide-box-knn li span { color: var(--atlas-mid-text); font-size: 0.9em; margin-left: 5px;}
+
+
+  </style>
+</head>
+<body>
+
+<canvas id="particle-canvas"></canvas>
+
+<div class="container">
+  <a href="/" class="nav-link">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+    </svg>
+    Back to Workout Gallery
+  </a>
+  <h1>Workout Detail: {{workout_id}}</h1>
+  
+  <div class="content-grid">
+    <div class="image-box">
+      <h2>Workout Fingerprint</h2>
+      <img src="data:image/png;base64,{{b64_combined}}" alt="Generated feature image from JSON data" class="main-img">
+      <p class="caption">
+        This 8x8 "visual fingerprint" is flattened into a 192-element vector for search.
+      </p>
+      <p class="caption">
+        <b>R:</b> Heart Rate ({{norm_bounds_hr}})<br>
+        <b>G:</b> Calories ({{norm_bounds_cal}})<br>
+        <b>B:</b> Speed ({{norm_bounds_speed}})
+      </p>
+    </div>
+
+    <div class="json-box">
+      <h2>Original JSON Data</h2>
+      <p class="caption">Note the <code>workout_vector</code> field was added automatically during generation.</p>
+      <pre><code>{{json_data_pretty}}</code></pre>
+    </div>
+  </div>
+
+  <div class="ai-summary-box">
+    <div class="ai-header">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" style="color: var(--accent-blue);">
+          <path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm-5.467 4.14C7.02 12.637 7.558 13 8 13c.448 0 .89-.37 1.341-.758.384-.33 1.164-.98 1.956-1.579.529-.396.958-.87 1.253-1.412.308-.567.452-1.217.452-1.921 0-.663-.122-1.284-.367-1.841-.247-.568-.62-1.11-1.12-1.583-.497-.47-1.127-.866-1.87-1.171C9.697 5.093 8.87 4.75 8 4.75c-.878 0-1.688.354-2.457.784-.735.41-1.353.94-1.854 1.572-.497.625-.873 1.342-1.124 2.144-.25.808-.372 1.68-.372 2.616 0 .666.126 1.298.375 1.879.248.568.618 1.107 1.117 1.582.497.47 1.127.865 1.87 1.171z"/>
+          <path fill-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zM8 2A6 6 0 1 1 8 14 6 6 0 0 1 8 2z"/>
+        </svg>
+        AI Radiologist Summary ({{ai_classification}})
+      </h2>
+      <div class="button-group">
+        {{ai_analysis_button_html}}
+        <button id="inspectPromptBtn" class="control-btn nav-link btn-prompt">Inspect LLM Prompt
+        </button>
+      </div>
+    </div>
+    <p>
+      This qualitative summary is generated by an LLM (OpenAI API). <strong>Crucially, the AI does not perform the math.</strong>
+      This app first uses Python (NumPy) to deterministically calculate all key metrics (Avg HR, speed deviation, etc.).
+      The AI is then given these <em>pre-computed facts</em> (viewable via 'Inspect LLM Prompt') to provide a qualitative, radiologist-style interpretation.
+      <strong>It must be manually generated by clicking the button.</strong>
+    </p>
+    <p class="ai-summary-text">{{ai_summary}}</p>
+  </div>
+
+  <div class="guide-box guide-box-knn">
+    <h2>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" style="color: var(--atlas-green);">
+        <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        <path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/>
+      </svg>
+      Atlas Vector Search (Workout Twins)
+    </h2>
+    <p>
+      Using a <code>$vectorSearch</code> pipeline in MongoDB Atlas with index <code>{{vector_index_name}}</code>
+      to find the 3 workouts most similar to this one's 192-element vector (excluding itself). Higher score means more similar pattern.
+    </p>
+    <ul>{{ai_neighbors_html}}</ul>
+  </div>
+
+  <div class="explanation-box">
+    <div class="pipeline-header">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" style="color: var(--accent-purple);">
+          <path d="M11.854 1.146a.5.5 0 0 0-.708 0l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L8.207 8l3.647-3.646a.5.5 0 0 0 0-.708z"/>
+          <path d="M4.146 1.146a.5.5 0 0 1 .708 0l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L7.793 8 4.146 4.354a.5.5 0 0 1 0-.708z"/>
+        </svg>
+        The Encoding Pipeline: From Data to Fingerprint
+      </h2>
+      <button id="whyCoolBtn" class="control-btn btn-why-cool">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M13.468 12.37C12.758 11.226 11.195 10 8 10s-4.757 1.225-5.468 2.37A6.987 6.987 0 0 0 8 15a6.987 6.987 0 0 0 5.468-2.63z"/>
+          <path fill-rule="evenodd" d="M8 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+          <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8z"/>
+        </svg>
+        Why is this cool?
+      </button>
+    </div>
+    
+    <div class="encoding-pipeline">
+      <div class="pipeline-steps">
+        
+        <div class="pipeline-step">
+          <h3><span class="step-number">1</span> Start: 1D Time-Series Data (64 mins)</h3>
+          <p>We begin with three separate 64-point data arrays, normalized to a 0-255 scale.</p>
+          <div class="step-1-charts">
+            <div>
+              <h4 class="red">Heart Rate (1D Array)</h4>
+              <img src="data:image/png;base64,{{b64_chart_hr}}" alt="Heart Rate Line Chart" class="chart-img">
+            </div>
+            <div>
+              <h4 class="green">Calories (1D Array)</h4>
+              <img src="data:image/png;base64,{{b64_chart_cal}}" alt="Calories Line Chart" class="chart-img">
+            </div>
+            <div>
+              <h4 class="blue">Speed (1D Array)</h4>
+              <img src="data:image/png;base64,{{b64_chart_speed}}" alt="Speed Line Chart" class="chart-img">
+            </div>
+          </div>
+        </div>
+        
+        <div class="pipeline-step">
+          <h3><span class="step-number">2</span> "Fold" 1D (64) into 2D (8x8 Grids)</h3>
+          <p>Each 64-point array is reshaped into an 8x8 grid. Think of it like taking a long string of 64 characters and wrapping it every 8 characters to form an 8x8 block of text. This turns temporal patterns into visual textures.</p>
+          <div class="fold-visualization">
+            <div class="fold-text-block">
+              [&nbsp;<span class="highlight">0,&nbsp;1,&nbsp;2,&nbsp;3,&nbsp;4,&nbsp;5,&nbsp;6,&nbsp;7,</span>&nbsp;<span class="dim">8,&nbsp;9,&nbsp;10,&nbsp;...,&nbsp;61,&nbsp;62,&nbsp;63</span>&nbsp;]
+            </div>
+            <div class="pipeline-arrow">&Rarr;</div>
+            <div class="fold-grid">
+              <span class="highlight">0</span><span class="highlight">1</span><span class="highlight">2</span><span class="highlight">3</span><span class="highlight">4</span><span class="highlight">5</span><span class="highlight">6</span><span class="highlight">7</span>
+              <span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span>
+              <span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span>
+              <span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span>
+              <span>32</span><span>33</span><span>34</span><span>35</span><span>36</span><span>37</span><span>38</span><span>39</span>
+              <span>40</span><span>41</span><span>42</span><span>43</span><span>44</span><span>45</span><span>46</span><span>47</span>
+              <span>48</span><span>49</span><span>50</span><span>51</span><span>52</span><span>53</span><span>54</span><span>55</span>
+              <span>56</span><span>57</span><span>58</span><span>59</span><span>60</span><span>61</span><span>62</span><span>63</span>
+            </div>
+          </div>
+          <p style="margin-top: 15px;">Minutes <code>0..7</code> become Row 1 (highlighted). Minutes <code>8..15</code> become Row 2, etc. We now have three separate 8x8 grayscale "channels".</p>
+        </div>
+        
+        <div class="pipeline-step">
+          <h3><span class="step-number">3</span> Stack Channels into 8x8x3 RGB Image</h3>
+          <p>The three 8x8 grayscale grids (channels) generated in Step 2 are combined pixel-by-pixel:</p>
+          <div class="step-3-substeps">
+              <div class="substep">
+                  <img src="data:image/png;base64,{{b64_r}}" alt="Red channel" class="channel-img">
+                  <p><strong>Heart Rate</strong> data provides the pixel values for the <strong class="red-label">Red channel</strong>.</p>
+              </div>
+              <div class="substep">
+                  <img src="data:image/png;base64,{{b64_g}}" alt="Green channel" class="channel-img">
+                  <p><strong>Calories</strong> data provides the pixel values for the <strong class="green-label">Green channel</strong>.</p>
+              </div>
+               <div class="substep">
+                  <img src="data:image/png;base64,{{b64_b}}" alt="Blue channel" class="channel-img">
+                  <p><strong>Speed</strong> data provides the pixel values for the <strong class="blue-label">Blue channel</strong>.</p>
+              </div>
+          </div>
+          <div class="pipeline-arrow">&dArr;</div> 
+          <p style="text-align: center; margin-top: 15px;">These channels are layered together...</p>
+          <div style="text-align: center; margin-top: 10px;">
+              <img src="data:image/png;base64,{{b64_combined}}" alt="Combined RGB" class="channel-img" style="width: 160px; height: 160px; border-width: 2px;">
+              <p>...to create the final <strong>8x8 RGB color "fingerprint"</strong> image.</p>
+          </div>
+        </div>
+        
+        <div class="pipeline-step">
+          <h3><span class="step-number">4</span> Finish: Flatten to 192-Element Vector</h3>
+          <p>The 8x8x3 image (8 rows * 8 columns * 3 color channels = 192 values) is "flattened" row by row into a single list of 192 numbers. This vector numerically captures the visual pattern.</p>
+          <div class="step-4-content">
+              <pre><code>Vector = [Pixel(0,0)R, Pixel(0,0)G, Pixel(0,0)B, Pixel(0,1)R, ..., Pixel(7,7)B]</code></pre>
+              <p>This is the vector stored in MongoDB Atlas and used for blazing-fast <code>$vectorSearch</code>!</p>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+  <div class="guide-box guide-box-radiologist">
+    <h2>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" style="color: var(--accent-orange);">
+        <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+        <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
+      </svg>
+      A Radiologist's Guide: Reading the Fingerprint
+    </h2>
+    <p>Think of this 8x8 image like a tiny X-ray of your workout's effort structure:</p>
+    <ul>
+      <li><strong>Overall Color:</strong> Red=HR, Green=Calories, Blue=Speed.
+        <span style="color: #FFB6F1; background: #2c1a2b; padding: 1px 4px; border-radius: 3px;">Purplish</span> (R+B) = High HR & Speed (intense run).
+        <span style="color: #DFFFBF; background: #1a3a53; padding: 1px 4px; border-radius: 3px;">Yellowish</span> (R+G) = High HR & Calories (cardio/strength).
+        <span style="color: #000; background: #fff; padding: 1px 4px; border-radius: 3px;">White</span> = Peak effort (all channels high).
+        <span style="color: #eee; background: #333; padding: 1px 4px; border-radius: 3px;">Dark/Black</span> = Low effort (rest/warmup).</li>
+      <li><strong>Texture & Patterns (Top-Left to Bottom-Right):</strong> The image reads like text. Top-Left (start) is often dark (warm-up), Bottom-Right (end) is often dark (cool-down).
+        Clear <strong>horizontal stripes</strong> in Blue suggest speed intervals.
+        A smooth <strong>diagonal color gradient</strong> indicates a progressive ramp-up/down.</li>
+    </ul>
+  </div>
+
+  <div class="guide-box polymorphic-box">
+    <h2>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" style="color: var(--accent-red);">
+         <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h11A1.5 1.5 0 0 1 15 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5v-9zM2.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-11z"/>
+         <path d="M2 3h12v1H2zM2 5.5h12v1H2zM2 8h12v1H2zM2 10.5h12v1H2z"/>
+      </svg>
+      Polymorphic / Additional Fields
+    </h2>
+    <p>This data provides extra context but isn't part of the vector search. The specific fields here vary depending on the <code>workout_type</code>.</p>
+    <p><b>Workout Type:</b> {{workout_type}}</p>
+    <p><b>Session Tag:</b> {{session_tag}}</p>
+    {{gear_used_html}}
+    {{sets_reps_html}}
+    {{cycling_html}}
+    {{yoga_html}}
+    <p><b>Post-Session Notes:</b> {{post_session_notes_html}}</p>
+  </div>
+
+</div>
+
+<div id="promptModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <h2>Full LLM Prompt Sent to OpenAI</h2>
+    <p>This is the exact structured prompt sent to the LLM when 'Generate AI Summary' is clicked.</p>
+    <div class="prompt-code"><pre>{{llm_analysis_prompt}}</pre></div>
+    <p class="caption" style="margin-top: 15px;">
+      <strong>System Instruction:</strong>
+      "You are a professional Workout Radiologist. Analyze the provided structured workout data and provide a concise, qualitative summary (maximum 3 sentences) from the perspective of a fitness expert. Focus only on the pattern and function of the effort."
+    </p>
+  </div>
+</div>
+
+<div id="whyModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <h2>Why the "Visual Fingerprint"?</h2>
+    
+    <div class="modal-comparison">
+        <div class="pain-point">
+            <h3>❌ The Old Way (Painful!)</h3>
+            <p>Comparing raw time-series data (like minute-by-minute heart rate) directly is:</p>
+            <ul>
+                <li><strong>Slow:</strong> Algorithms like DTW are complex - comparing millions takes ages.</li>
+                <li><strong>Unindexable:</strong> You can't build a fast search index. Every search requires comparing against *everything*.</li>
+                <li><strong>Impractical:</strong> Real-time "find similar patterns" is basically impossible at scale.</li>
+            </ul>
+        </div>
+        <div class="divider"></div>
+        <div class="cool-point">
+            <h3>✅ The Vector Way (Awesome!)</h3>
+             <p>Turning the pattern into a vector ("fingerprint") via this encoding pipeline + Atlas Vector Search is:</p>
+            <ul>
+                <li><strong>Indexable:</strong> Atlas builds a highly optimized vector index (HNSW).</li>
+                <li><strong>Fast:</strong> Finding similar patterns in millions takes milliseconds, not hours.</li>
+                <li><strong>Shape-Focused:</strong> Captures the *structure* of the effort, perfect for finding workouts that *feel* the same.</li>
+            </ul>
+        </div>
+    </div>
+     <p class="bottom-line">
+       <strong>We trade a little precision for a HUGE gain in speed and scalability!</strong>
+    </p>
+  </div>
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const canvas = document.getElementById("particle-canvas");
+  // ... (Particle JS code - same as in index.html) ...
+  if (!canvas) {
+    console.error("Particle.js: Canvas element with id 'particle-canvas' not found.");
+    return;
+  }
+  
+  const ctx = canvas.getContext("2d");
+  let particles = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  function createParticle() {
+    const x = Math.random() * canvas.width;
+    const y = Math.random() * canvas.height;
+    const size = Math.random() * 2.5 + 1; 
+    const speedX = (Math.random() * 0.5 - 0.25) * 0.6; 
+    const speedY = (Math.random() * 0.5 - 0.25) * 0.6;
+    const opacity = Math.random() * 0.5 + 0.15; 
+    particles.push({x, y, size, speedX, speedY, opacity});
+  }
+
+  const numParticles = window.innerWidth < 768 ? 60 : 100; 
+  for (let i = 0; i < numParticles; i++) {
+    createParticle();
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    particles.forEach((p, index) => {
+      p.x += p.speedX;
+      p.y += p.speedY;
+
+      if (p.x < -p.size) p.x = canvas.width + p.size;
+      if (p.x > canvas.width + p.size) p.x = -p.size;
+      if (p.y < -p.size) p.y = canvas.height + p.size;
+      if (p.y > canvas.height + p.size) p.y = -p.size;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0, 237, 100, ${p.opacity * 0.8})`; 
+      ctx.fill();
+    });
+
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // --- Modal Logic (#promptModal) ---
+  const promptModal = document.getElementById("promptModal");
+  const promptBtn = document.getElementById("inspectPromptBtn");
+  const promptClose = promptModal ? promptModal.querySelector(".close-btn") : null;
+
+  if (promptBtn) {
+    promptBtn.onclick = function() {
+      if(promptModal) promptModal.style.display = "block";
+    }
+  }
+  if (promptClose) {
+    promptClose.onclick = function() {
+      if(promptModal) promptModal.style.display = "none";
+    }
+  }
+
+  // --- Modal Logic (#whyModal) ---
+  const whyModal = document.getElementById("whyModal");
+  const whyBtn = document.getElementById("whyCoolBtn");
+  const whyClose = whyModal ? whyModal.querySelector(".close-btn") : null;
+
+  if (whyBtn) {
+    whyBtn.onclick = function() {
+      if(whyModal) whyModal.style.display = "block";
+    }
+  }
+  if (whyClose) {
+    whyClose.onclick = function() {
+      if(whyModal) whyModal.style.display = "none";
+    }
+  }
+
+  // --- Close modal on window click ---
+  window.onclick = function(event) {
+    if (event.target == promptModal) {
+      promptModal.style.display = "none";
+    }
+    if (event.target == whyModal) {
+      whyModal.style.display = "none";
+    }
+  }
+
+  // --- Analyze Form Logic ---
+  const analyzeForm = document.getElementById("analyzeForm");
+  const analyzeBtn = document.getElementById("analyzeBtn");
+  if (analyzeForm && analyzeBtn) {
+    analyzeForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      analyzeBtn.disabled = true;
+      analyzeBtn.innerHTML = 'Analyzing...'; 
+      analyzeBtn.style.backgroundColor = 'var(--accent-orange)';
+      analyzeBtn.style.color = 'var(--button-text-dark)'; 
+
+      fetch(analyzeForm.action, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }).then(response => {
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          response.json().then(data => {
+            alert(`LLM Analysis Failed: ${data.detail}`);
+          }).catch(() => {
+            alert('LLM Analysis Failed. Check console and server logs.');
+          });
+          // Restore button on failure
+          analyzeBtn.disabled = false;
+          analyzeBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: -2px; margin-right: 5px;">
+              <path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm-5.467 4.14C7.02 12.637 7.558 13 8 13c.448 0 .89-.37 1.341-.758.384-.33 1.164-.98 1.956-1.579.529-.396.958-.87 1.253-1.412.308-.567.452-1.217.452-1.921 0-.663-.122-1.284-.367-1.841-.247-.568-.62-1.11-1.12-1.583-.497-.47-1.127-.866-1.87-1.171C9.697 5.093 8.87 4.75 8 4.75c-.878 0-1.688.354-2.457.784-.735.41-1.353.94-1.854 1.572-.497.625-.873 1.342-1.124 2.144-.25.808-.372 1.68-.372 2.616 0 .666.126 1.298.375 1.879.248.568.618 1.107 1.117 1.582.497.47 1.127.865 1.87 1.171z"/>
+              <path fill-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zM8 2A6 6 0 1 1 8 14 6 6 0 0 1 8 2z"/>
+            </svg>
+            Generate AI Summary
+          `;
+          // Restore original button style
+          analyzeBtn.style.backgroundColor = 'var(--accent-blue)';
+          analyzeBtn.style.color = 'white'; 
+        }
+      }).catch(error => {
+        console.error('Network Error:', error);
+        alert('Network error during analysis.');
+        // Restore button on network error
+        analyzeBtn.disabled = false;
+         analyzeBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: -2px; margin-right: 5px;">
+               <path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm-5.467 4.14C7.02 12.637 7.558 13 8 13c.448 0 .89-.37 1.341-.758.384-.33 1.164-.98 1.956-1.579.529-.396.958-.87 1.253-1.412.308-.567.452-1.217.452-1.921 0-.663-.122-1.284-.367-1.841-.247-.568-.62-1.11-1.12-1.583-.497-.47-1.127-.866-1.87-1.171C9.697 5.093 8.87 4.75 8 4.75c-.878 0-1.688.354-2.457.784-.735.41-1.353.94-1.854 1.572-.497.625-.873 1.342-1.124 2.144-.25.808-.372 1.68-.372 2.616 0 .666.126 1.298.375 1.879.248.568.618 1.107 1.117 1.582.497.47 1.127.865 1.87 1.171z"/>
+               <path fill-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zM8 2A6 6 0 1 1 8 14 6 6 0 0 1 8 2z"/>
+            </svg>
+            Generate AI Summary
+          `;
+        analyzeBtn.style.backgroundColor = 'var(--accent-blue)';
+        analyzeBtn.style.color = 'white'; 
+      });
+    });
+  }
+});
+</script>
+
+</body>
+</html>
