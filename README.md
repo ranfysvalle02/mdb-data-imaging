@@ -188,12 +188,13 @@ An “Inspect LLM Prompt” button in the UI shows you exactly what the LLM sees
   
 ### **Critical Dependencies**  
 ```text  
-# motor==3.3.2  
-# fastapi==0.104.1  
-# httpx==0.25.0  
-# numpy==1.26.0  
-# pillow==10.1.0  
-# matplotlib==3.8.0  
+motor==3.7.1  
+fastapi==0.120.1  
+httpx==0.28.1  
+numpy==2.2.6 
+pillow==12.0.0  
+matplotlib==3.10.7  
+uvicorn[standard]
 ```  
   
 ---  
