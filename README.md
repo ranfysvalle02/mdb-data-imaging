@@ -27,6 +27,8 @@ This makes finding workouts based on their *intrinsic pattern* practically impos
 
 ## 💡 The Core Innovation: Turning Time into Texture
 
+![](ai-radiology.png)
+
 Our breakthrough hinges on a simple, powerful idea: **Treat complex 1D time-series data like a simple 2D image.**
 
 If we can represent the *pattern* of a workout visually, we can potentially leverage techniques used in image analysis and, crucially, vector databases. Instead of complex, unindexable DTW comparisons, we aim for fast, indexable vector similarity searches. We're teaching the database to recognize the *texture* of your effort.

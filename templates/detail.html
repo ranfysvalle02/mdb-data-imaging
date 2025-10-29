@@ -640,13 +640,19 @@
        border-radius: 6px;
        border: 1px solid var(--atlas-border);
        transition: background-color 0.2s ease;
+       line-height: 1.5; /* Added for clarity */
    }
     .guide-box-knn li:hover {
         background-color: #1a3a53;
     }
    .guide-box-knn li a { font-weight: 600; }
    /* Span for score */
-   .guide-box-knn li span { color: var(--atlas-mid-text); font-size: 0.9em; margin-left: 5px;}
+   .guide-box-knn li span { 
+       color: var(--atlas-mid-text); 
+       font-size: 0.9em; 
+       margin-left: 8px; /* Added margin */
+       display: inline-block; /* Added for layout */
+    }
 
 
   </style>
@@ -873,7 +879,7 @@
     <div class="prompt-code"><pre>{{llm_analysis_prompt}}</pre></div>
     <p class="caption" style="margin-top: 15px;">
       <strong>System Instruction:</strong>
-      "You are a professional Workout Radiologist. Analyze the provided structured workout data and provide a concise, qualitative summary (maximum 3 sentences) from the perspective of a fitness expert. Focus only on the pattern and function of the effort."
+      "You are a professional Workout Radiologist. Your job is to synthesize all provided data into a concise, qualitative summary (max 3 sentences) for a fitness expert. Pay special attention to the <strong>Radiology Task</strong> section, where you must analyze any <strong>discrepancies</strong> between the quantitative metrics and the user's qualitative metadata. Explain the <i>function</i> of the effort and provide a holistic diagnosis."
     </p>
   </div>
 </div>
