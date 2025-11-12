@@ -2,6 +2,11 @@
 
 ![](smartwatch-visuals.png)
 
+## Related Papers:
+
+https://arxiv.org/html/2412.20582v1
+
+
 # **The Workout Radiologist: Teaching Databases to "See" Your Effort**
 
 Imagine logging hundreds, maybe thousands, of workouts. Each one, a digital chronicle of sweat, effort, and maybe even a personal best. Now, picture this: you want to find that *one specific* interval session from last summer. Not just *any* interval session, but the one where you absolutely *nailed* the pacing, the one that *felt* just right. How do you search for that *feeling*?
